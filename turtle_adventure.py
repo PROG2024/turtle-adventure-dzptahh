@@ -1,36 +1,17 @@
-"""
-The turtle_adventure module maintains all classes related to the Turtle's
-adventure game.
-"""
-from turtle import RawTurtle
+from typing import Final, Tuple, List
+from turtle import RawTurtle, TurtleScreen
 from gamelib import Game, GameElement
+from enemies import Enemy, EnemyGenerator
 
 
-class TurtleGameElement(GameElement):
-    """
-    An abstract class representing all game elemnets related to the Turtle's
-    Adventure game
-    """
-
-    def __init__(self, game: "TurtleAdventureGame"):
-        super().__init__(game)
-        self.__game: "TurtleAdventureGame" = game
-
-    @property
-    def game(self) -> "TurtleAdventureGame":
-        """
-        Get reference to the associated TurtleAnvengerGame instance
-        """
-        return self.__game
-
-
-class Waypoint(TurtleGameElement):
+class Waypoint(GameElement):
     """
     Represent the waypoint to which the player will move.
     """
 
     def __init__(self, game: "TurtleAdventureGame"):
         super().__init__(game)
+        self.__game: "TurtleAdventureGame" = game
         self.__id1: int
         self.__id2: int
         self.__active: bool = False
@@ -81,13 +62,14 @@ class Waypoint(TurtleGameElement):
         return self.__active
 
 
-class Home(TurtleGameElement):
+class Home(GameElement):
     """
     Represent the player's home.
     """
 
-    def __init__(self, game: "TurtleAdventureGame", pos: tuple[int, int], size: int):
+    def __init__(self, game: "TurtleAdventureGame", pos: Tuple[int, int], size: int):
         super().__init__(game)
+        self.__game: "TurtleAdventureGame" = game
         self.__id: int
         self.__size: int = size
         x, y = pos
@@ -96,9 +78,6 @@ class Home(TurtleGameElement):
 
     @property
     def size(self) -> int:
-        """
-        Get or set the size of Home
-        """
         return self.__size
 
     @size.setter
@@ -131,7 +110,7 @@ class Home(TurtleGameElement):
         return x1 <= x <= x2 and y1 <= y <= y2
 
 
-class Player(TurtleGameElement):
+class Player(GameElement):
     """
     Represent the main player, implemented using Python's turtle.
     """
@@ -139,8 +118,13 @@ class Player(TurtleGameElement):
     def __init__(self,
                  game: "TurtleAdventureGame",
                  turtle: RawTurtle,
+                 waypoint: Waypoint,
+                 home: Home,
                  speed: float = 5):
         super().__init__(game)
+        self.__game: "TurtleAdventureGame" = game
+        self.__waypoint: Waypoint = waypoint
+        self.__home: Home = home
         self.__speed: float = speed
         self.__turtle: RawTurtle = turtle
 
@@ -169,11 +153,11 @@ class Player(TurtleGameElement):
 
     def update(self) -> None:
         # check if player has arrived home
-        if self.game.home.contains(self.x, self.y):
-            self.game.game_over_win()
+        if self.__home.contains(self.x, self.y):
+            self.__game.game_over_win()
+        waypoint = self.__waypoint
         turtle = self.__turtle
-        waypoint = self.game.waypoint
-        if self.game.waypoint.is_active:
+        if waypoint.is_active:
             turtle.setheading(turtle.towards(waypoint.x, waypoint.y))
             turtle.forward(self.speed)
             if turtle.distance(waypoint.x, waypoint.y) < self.speed:
@@ -204,125 +188,11 @@ class Player(TurtleGameElement):
         self.__turtle.sety(val)
 
 
-class Enemy(TurtleGameElement):
-    """
-    Define an abstract enemy for the Turtle's adventure game
-    """
-
-    def __init__(self,
-                 game: "TurtleAdventureGame",
-                 size: int,
-                 color: str):
-        super().__init__(game)
-        self.__size = size
-        self.__color = color
-
-    @property
-    def size(self) -> float:
-        """
-        Get the size of the enemy
-        """
-        return self.__size
-
-    @property
-    def color(self) -> str:
-        """
-        Get the color of the enemy
-        """
-        return self.__color
-
-    def hits_player(self):
-        """
-        Check whether the enemy is hitting the player
-        """
-        return (
-            (self.x - self.size/2 < self.game.player.x < self.x + self.size/2)
-            and
-            (self.y - self.size/2 < self.game.player.y < self.y + self.size/2)
-        )
-
-
-# TODO
-# * Define your enemy classes
-# * Implement all methods required by the GameElement abstract class
-# * Define enemy's update logic in the update() method
-# * Check whether the player hits this enemy, then call the
-#   self.game.game_over_lose() method in the TurtleAdventureGame class.
-class DemoEnemy(Enemy):
-    """
-    Demo enemy
-    """
-
-    def __init__(self,
-                 game: "TurtleAdventureGame",
-                 size: int,
-                 color: str):
-        super().__init__(game, size, color)
-
-    def create(self) -> None:
-        pass
-
-    def update(self) -> None:
-        pass
-
-    def render(self) -> None:
-        pass
-
-    def delete(self) -> None:
-        pass
-
-
-# TODO
-# Complete the EnemyGenerator class by inserting code to generate enemies
-# based on the given game level; call TurtleAdventureGame's add_enemy() method
-# to add enemies to the game at certain points in time.
-#
-# Hint: the 'game' parameter is a tkinter's frame, so it's after()
-# method can be used to schedule some future events.
-
-class EnemyGenerator:
-    """
-    An EnemyGenerator instance is responsible for creating enemies of various
-    kinds and scheduling them to appear at certain points in time.
-    """
-
-    def __init__(self, game: "TurtleAdventureGame", level: int):
-        self.__game: TurtleAdventureGame = game
-        self.__level: int = level
-
-        # example
-        self.__game.after(100, self.create_enemy)
-
-    @property
-    def game(self) -> "TurtleAdventureGame":
-        """
-        Get reference to the associated TurtleAnvengerGame instance
-        """
-        return self.__game
-
-    @property
-    def level(self) -> int:
-        """
-        Get the game level
-        """
-        return self.__level
-
-    def create_enemy(self) -> None:
-        """
-        Create a new enemy, possibly based on the game level
-        """
-        new_enemy = DemoEnemy(self.__game, 20, "red")
-        new_enemy.x = 100
-        new_enemy.y = 100
-        self.game.add_element(new_enemy)
-
-
-class TurtleAdventureGame(Game): # pylint: disable=too-many-ancestors
+class TurtleAdventureGame(Game):
     """
     The main class for Turtle's Adventure.
     """
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self, parent, screen_width: int, screen_height: int, level: int = 1):
         self.level: int = level
         self.screen_width: int = screen_width
@@ -330,7 +200,7 @@ class TurtleAdventureGame(Game): # pylint: disable=too-many-ancestors
         self.waypoint: Waypoint
         self.player: Player
         self.home: Home
-        self.enemies: list[Enemy] = []
+        self.enemies: List[RandomWalkEnemy]
         self.enemy_generator: EnemyGenerator
         super().__init__(parent)
 
@@ -344,42 +214,26 @@ class TurtleAdventureGame(Game): # pylint: disable=too-many-ancestors
         self.add_element(self.waypoint)
         self.home = Home(self, (self.screen_width-100, self.screen_height//2), 20)
         self.add_element(self.home)
-        self.player = Player(self, turtle)
+        self.player = Player(self, turtle, self.waypoint, self.home)
         self.add_element(self.player)
         self.canvas.bind("<Button-1>", lambda e: self.waypoint.activate(e.x, e.y))
 
+        self.enemies = []
         self.enemy_generator = EnemyGenerator(self, level=self.level)
 
         self.player.x = 50
         self.player.y = self.screen_height//2
 
     def add_enemy(self, enemy: Enemy) -> None:
-        """
-        Add a new enemy into the current game
-        """
         self.enemies.append(enemy)
         self.add_element(enemy)
 
-    def game_over_win(self) -> None:
-        """
-        Called when the player wins the game and stop the game
-        """
+    def game_over_win(self):
         self.stop()
         font = ("Arial", 36, "bold")
-        self.canvas.create_text(self.screen_width/2,
-                                self.screen_height/2,
-                                text="You Win",
-                                font=font,
-                                fill="green")
+        self.canvas.create_text(self.screen_width/2, self.screen_height/2, text="You Win", font=font, fill="green")
 
-    def game_over_lose(self) -> None:
-        """
-        Called when the player loses the game and stop the game
-        """
+    def game_over_lose(self):
         self.stop()
         font = ("Arial", 36, "bold")
-        self.canvas.create_text(self.screen_width/2,
-                                self.screen_height/2,
-                                text="You Lose",
-                                font=font,
-                                fill="red")
+        self.canvas.create_text(self.screen_width/2, self.screen_height/2, text="You Lose", font=font, fill="red")

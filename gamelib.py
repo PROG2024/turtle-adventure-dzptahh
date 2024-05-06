@@ -40,18 +40,8 @@ class GameElement(ABC):
         self.__y = val
 
     @property
-    def game(self) -> "Game":
-        """
-        Return reference to the associated Game instance
-        """
-        return self.__game
-
-    @property
     def canvas(self) -> tk.Canvas:
-        """
-        Return reference to the game's main canvas
-        """
-        return self.game.canvas
+        return self.__game.canvas
 
     @abstractmethod
     def create(self) -> None:
@@ -78,7 +68,7 @@ class GameElement(ABC):
         """
 
 
-class Game(tk.Frame, ABC): # pylint: disable=too-many-ancestors
+class Game(tk.Frame, ABC):
     """
     An abstract class to be implemented with a concrete game class that relies
     on update/render loop
@@ -99,18 +89,7 @@ class Game(tk.Frame, ABC): # pylint: disable=too-many-ancestors
         """
         Create game elements and initialize other game-specific attributes
         """
-
-    @abstractmethod
-    def game_over_win(self) -> None:
-        """
-        Get called when the player wins the game
-        """
-
-    @abstractmethod
-    def game_over_lose(self) -> None:
-        """
-        Get called when the player loses the game
-        """
+        pass
 
     def add_element(self, element: GameElement) -> None:
         """
@@ -163,3 +142,5 @@ class Game(tk.Frame, ABC): # pylint: disable=too-many-ancestors
             element.render()
         if self.__started:
             self.after(self.__update_delay, self.animate)
+
+
